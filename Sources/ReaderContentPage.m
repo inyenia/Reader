@@ -27,6 +27,7 @@
 #import "ReaderContentPage.h"
 #import "ReaderContentTile.h"
 #import "CGPDFDocument.h"
+#import "ReaderAnnotations.h"
 
 @implementation ReaderContentPage
 {
@@ -545,7 +546,9 @@
 	//CGContextSetRenderingIntent(context, kCGRenderingIntentDefault); CGContextSetInterpolationQuality(context, kCGInterpolationDefault);
 
 	CGContextDrawPDFPage(context, _PDFPageRef); // Render the PDF page into the context
-
+	
+	[ReaderAnnotations showAnotationImage:_PDFPageRef inContext:context]; //Show annotations in this page
+	
 	if (readerContentPage != nil) readerContentPage = nil; // Release self
 }
 

@@ -188,6 +188,7 @@
 		CGFloat numberY = (0.0f - (PAGE_NUMBER_HEIGHT + space)); CGFloat numberX = ((self.bounds.size.width - PAGE_NUMBER_WIDTH) * 0.5f);
 		CGRect numberRect = CGRectMake(numberX, numberY, PAGE_NUMBER_WIDTH, PAGE_NUMBER_HEIGHT);
 
+#if (READER_SHOW_PAGE_NUMBER == TRUE)
 		pageNumberView = [[UIView alloc] initWithFrame:numberRect]; // Page numbers view
 
 		pageNumberView.autoresizesSubviews = NO;
@@ -218,7 +219,8 @@
 		[pageNumberView addSubview:pageNumberLabel]; // Add label view
 
 		[self addSubview:pageNumberView]; // Add page numbers display view
-
+#endif
+		
 		trackControl = [[ReaderTrackControl alloc] initWithFrame:self.bounds]; // Track control view
 
 		[trackControl addTarget:self action:@selector(trackViewTouchDown:) forControlEvents:UIControlEventTouchDown];

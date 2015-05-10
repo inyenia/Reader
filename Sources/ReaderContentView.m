@@ -36,8 +36,6 @@
 
 @implementation ReaderContentView
 {
-	UIView *theContainerView;
-
 	UIUserInterfaceIdiom userInterfaceIdiom;
 
 	ReaderContentPage *theContentPage;
@@ -65,6 +63,7 @@ static CGFloat g_BugFixWidthInset = 0.0f;
 #pragma mark - Properties
 
 @synthesize message;
+@synthesize theContainerView;
 
 #pragma mark - ReaderContentView functions
 
@@ -162,6 +161,7 @@ static inline CGFloat zoomScaleThatFits(CGSize target, CGSize source)
 #endif // end of READER_SHOW_SHADOWS Option
 
 			self.contentSize = theContentPage.bounds.size; [self centerScrollViewContent];
+			self.pageSize = self.contentSize;
 
 #if (READER_ENABLE_PREVIEW == TRUE) // Option
 

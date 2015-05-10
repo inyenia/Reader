@@ -48,8 +48,6 @@
 
 	ReaderMainPagebar *mainPagebar;
 
-	NSMutableDictionary *contentViews;
-
 	UIUserInterfaceIdiom userInterfaceIdiom;
 
 	NSInteger currentPage, minimumPage, maximumPage;
@@ -82,6 +80,7 @@
 #pragma mark - Properties
 
 @synthesize delegate;
+@synthesize contentViews;
 
 #pragma mark - ReaderViewController methods
 
@@ -252,6 +251,12 @@
 		[mainToolbar setBookmarkState:[document.bookmarks containsIndex:page]];
 
 		[mainPagebar updatePagebar]; // Update page bar
+		
+		for (Annotation *anotation in self.annotations) {
+			if ([anotation.page isEqualToNumber:[NSNumber numberWithInteger:currentPage]]) {
+				[self showAnnotation:anotation];
+			}
+		}
 	}
 }
 
@@ -354,16 +359,20 @@
 	theScrollView.backgroundColor = [UIColor clearColor]; theScrollView.delegate = self;
 	[self.view addSubview:theScrollView];
 
+#if (READER_SHOW_TOOLS_BAR == TRUE) // Option
 	CGRect toolbarRect = viewRect; toolbarRect.size.height = TOOLBAR_HEIGHT;
 	mainToolbar = [[ReaderMainToolbar alloc] initWithFrame:toolbarRect document:document]; // ReaderMainToolbar
 	mainToolbar.delegate = self; // ReaderMainToolbarDelegate
 	[self.view addSubview:mainToolbar];
-
+#endif
+	
+#if (READER_SHOW_PAGE_BAR == TRUE) // Option
 	CGRect pagebarRect = self.view.bounds; pagebarRect.size.height = PAGEBAR_HEIGHT;
 	pagebarRect.origin.y = (self.view.bounds.size.height - pagebarRect.size.height);
 	mainPagebar = [[ReaderMainPagebar alloc] initWithFrame:pagebarRect document:document]; // ReaderMainPagebar
 	mainPagebar.delegate = self; // ReaderMainPagebarDelegate
 	[self.view addSubview:mainPagebar];
+#endif
 
 	if (fakeStatusBar != nil) [self.view addSubview:fakeStatusBar]; // Add status bar background view
 
@@ -897,6 +906,37 @@
 	[document archiveDocumentProperties]; // Save any ReaderDocument changes
 
 	if (userInterfaceIdiom == UIUserInterfaceIdiomPad) if (printInteraction != nil) [printInteraction dismissAnimated:NO];
+}
+
+#pragma mark - Annotaions methods
+
+- (void)showAnnotation:(Annotation *)annotation
+{
+	ReaderContentView *targetPage = [contentViews objectForKey:annotation.page];
+	if (annotation.imageView == nil) {
+		annotation.imageView = [[UIImageView alloc] initWithImage:annotation.image];
+	}
+	
+	if (targetPage){
+		if (document.pageNumber == annotation.page && annotation.image != nil && [annotation.imageView superview] == nil) {
+			UIView *content = targetPage.theContainerView;
+			CGFloat yPos = targetPage.pageSize.height - annotation.frame.origin.y - annotation.frame.size.height;
+			annotation.imageView.frame = CGRectMake(annotation.frame.origin.x, yPos, annotation.frame.size.width, annotation.frame.size.height);
+			[targetPage.theContainerView addSubview:annotation.imageView];
+		}
+	}
+	
+}
+
+- (void)removeAnnotation:(Annotation *)annotation
+{
+	ReaderContentView *targetPage = [contentViews objectForKey:annotation.page];
+	if (targetPage){
+		if (document.pageNumber == annotation.page && annotation.image != nil && [annotation.imageView superview] != nil) {
+			[annotation.imageView removeFromSuperview];
+		}
+	}
+	
 }
 
 @end

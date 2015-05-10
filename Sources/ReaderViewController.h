@@ -26,6 +26,7 @@
 #import <UIKit/UIKit.h>
 
 #import "ReaderDocument.h"
+#import "Annotation.h"
 
 @class ReaderViewController;
 
@@ -40,7 +41,12 @@
 @interface ReaderViewController : UIViewController
 
 @property (nonatomic, weak, readwrite) id <ReaderViewControllerDelegate> delegate;
+@property (nonatomic, strong) NSArray *annotations;
+@property (nonatomic, strong) NSMutableDictionary *contentViews;
 
 - (instancetype)initWithReaderDocument:(ReaderDocument *)object;
+- (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer;
+- (void)showAnnotation:(Annotation *)annotation;
+- (void)removeAnnotation:(Annotation *)annotation;
 
 @end

@@ -42,6 +42,9 @@
 @interface ReaderContentView : UIScrollView
 
 @property (nonatomic, weak, readwrite) id <ReaderContentViewDelegate> message;
+@property (nonatomic, strong) UIView *theContainerView;
+
+@property (nonatomic) CGSize pageSize;
 
 - (instancetype)initWithFrame:(CGRect)frame fileURL:(NSURL *)fileURL page:(NSUInteger)page password:(NSString *)phrase;
 
