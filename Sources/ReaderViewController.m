@@ -134,7 +134,17 @@
 
 	ReaderContentView *contentView = [[ReaderContentView alloc] initWithFrame:viewRect fileURL:fileURL page:page password:phrase]; // ReaderContentView
 
-	contentView.message = self; [contentViews setObject:contentView forKey:[NSNumber numberWithInteger:page]]; [scrollView addSubview:contentView];
+	contentView.message = self;
+	
+	[contentViews setObject:contentView forKey:[NSNumber numberWithInteger:page]];
+	
+	for (Annotation *anotation in self.annotations) {
+		if ([anotation.page isEqualToNumber:[NSNumber numberWithInteger:page]]) {
+			[self showAnnotation:anotation];
+		}
+	}
+	
+	[scrollView addSubview:contentView];
 
 	[contentView showPageThumb:fileURL page:page password:phrase guid:guid]; // Request page preview thumb
 }
@@ -252,11 +262,6 @@
 
 		[mainPagebar updatePagebar]; // Update page bar
 		
-		for (Annotation *anotation in self.annotations) {
-			if ([anotation.page isEqualToNumber:[NSNumber numberWithInteger:currentPage]]) {
-				[self showAnnotation:anotation];
-			}
-		}
 	}
 }
 
@@ -915,10 +920,12 @@
 	ReaderContentView *targetPage = [contentViews objectForKey:annotation.page];
 	if (annotation.imageView == nil) {
 		annotation.imageView = [[UIImageView alloc] initWithImage:annotation.image];
+		annotation.imageView.contentMode = UIViewContentModeScaleAspectFit;
 	}
 	
 	if (targetPage){
-		if (document.pageNumber == annotation.page && annotation.image != nil && [annotation.imageView superview] == nil) {
+		if (annotation.image != nil
+			&& [annotation.imageView superview] == nil) {
 			UIView *content = targetPage.theContainerView;
 			CGFloat yPos = targetPage.pageSize.height - annotation.frame.origin.y - annotation.frame.size.height;
 			annotation.imageView.frame = CGRectMake(annotation.frame.origin.x, yPos, annotation.frame.size.width, annotation.frame.size.height);
