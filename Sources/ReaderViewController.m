@@ -325,6 +325,24 @@
 	return self;
 }
 
+- (void)updateDocument
+{
+	currentPage = 0;
+	[self removeAllAnnotation];
+	NSArray *keys = [contentViews allKeys];
+	for(NSNumber *key in keys){
+		ReaderContentView *contentView = [contentViews objectForKey:key];
+		[contentView removeFromSuperview];
+		[contentViews removeObjectForKey:key];
+	}
+	ReaderDocument *object = [ReaderDocument withDocumentFilePath:[document.fileURL path] password:document.password];
+	[object updateDocumentProperties]; document = object; // Retain the supplied ReaderDocument object for our use
+	[ReaderThumbCache touchThumbCacheWithGUID:object.guid]; // Touch the document thumb cache directory
+	[self updateContentSize:theScrollView]; // Update content size first
+	[self showDocumentPage:[document.pageNumber integerValue]]; // Show page
+	document.lastOpen = [NSDate date]; // Update document last opened date
+}
+
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -413,16 +431,16 @@
 
 		lastAppearSize = CGSizeZero; // Reset view size tracking
 	}
+	
+	if (CGSizeEqualToSize(theScrollView.contentSize, CGSizeZero) == true)
+	{
+		[self performSelector:@selector(showDocument) withObject:nil afterDelay:0.0];
+	}
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
 	[super viewDidAppear:animated];
-
-	if (CGSizeEqualToSize(theScrollView.contentSize, CGSizeZero) == true)
-	{
-		[self performSelector:@selector(showDocument) withObject:nil afterDelay:0.0];
-	}
 
 #if (READER_DISABLE_IDLE == TRUE) // Option
 
@@ -944,6 +962,19 @@
 		}
 	}
 	
+}
+
+- (void)removeAllAnnotation
+{
+	for (Annotation *annotation in self.annotations) {
+		ReaderContentView *targetPage = [contentViews objectForKey:annotation.page];
+		if (targetPage){
+			if (document.pageNumber == annotation.page && annotation.image != nil && [annotation.imageView superview] != nil) {
+				[annotation.imageView removeFromSuperview];
+			}
+		}
+	}
+	self.annotations = [[NSArray alloc] init];
 }
 
 @end

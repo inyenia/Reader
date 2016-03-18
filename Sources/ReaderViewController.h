@@ -45,8 +45,10 @@
 @property (nonatomic, strong) NSMutableDictionary *contentViews;
 
 - (instancetype)initWithReaderDocument:(ReaderDocument *)object;
+- (void)updateDocument;
 - (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer;
 - (void)showAnnotation:(Annotation *)annotation;
 - (void)removeAnnotation:(Annotation *)annotation;
+- (void)removeAllAnnotation;
 
 @end
