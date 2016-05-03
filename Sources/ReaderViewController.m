@@ -335,9 +335,10 @@
 		[contentView removeFromSuperview];
 		[contentViews removeObjectForKey:key];
 	}
-	ReaderDocument *object = [ReaderDocument withDocumentFilePath:[document.fileURL path] password:document.password];
-	[object updateDocumentProperties]; document = object; // Retain the supplied ReaderDocument object for our use
-	[ReaderThumbCache touchThumbCacheWithGUID:object.guid]; // Touch the document thumb cache directory
+	//ReaderDocument *object = [ReaderDocument withDocumentFilePath:[document.fileURL path] password:document.password];
+	//[object updateDocumentProperties];
+	//document = object; // Retain the supplied ReaderDocument object for our use
+	//[ReaderThumbCache touchThumbCacheWithGUID:object.guid]; // Touch the document thumb cache directory
 	[self updateContentSize:theScrollView]; // Update content size first
 	[self showDocumentPage:[document.pageNumber integerValue]]; // Show page
 	document.lastOpen = [NSDate date]; // Update document last opened date
