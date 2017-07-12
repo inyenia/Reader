@@ -231,13 +231,27 @@
                                 
                             }
                             
-                            UIImage *imageSign234 = getImageRef(strm2);
-                            //[imageSign234 imageByRemovingColorCGColorRef:[UIColor whiteColor].CGColor];
-                            
-                            CGContextDrawImage(context, viewRect, imageSign234.CGImage);
-                            
+							UIImage *image = getImageRef(strm2);
+							//[imageSign234 imageByRemovingColorCGColorRef:[UIColor whiteColor].CGColor];
+							
+							CGSize imageSize = image.size;
+							float hfactor = imageSize.width / viewRect.size.width;
+							float vfactor = imageSize.height / viewRect.size.height;
+							
+							float factor = fmax(hfactor, vfactor);
+							
+							// Divide the size by the greater of the vertical or horizontal shrinkage factor
+							float newWidth = imageSize.width / factor;
+							float newHeight = imageSize.height / factor;
+							
+							CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
+							UIGraphicsBeginImageContextWithOptions(newRect.size, NO, 0.0);
+							[image drawInRect:newRect];
+							
+							CGContextDrawImage(context, newRect, image.CGImage);
+							
                         }
-                        
+						
                     }
                     
                 }

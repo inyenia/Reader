@@ -547,7 +547,7 @@
 
 	CGContextDrawPDFPage(context, _PDFPageRef); // Render the PDF page into the context
 	
-	//[ReaderAnnotations showAnotationImage:_PDFPageRef inContext:context]; //Show annotations in this page
+	[ReaderAnnotations showAnotationImage:_PDFPageRef inContext:context]; //Show annotations in this page
 	
 	if (readerContentPage != nil) readerContentPage = nil; // Release self
 }
