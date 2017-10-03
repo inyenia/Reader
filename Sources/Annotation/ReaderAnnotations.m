@@ -25,219 +25,110 @@
     
     
     CGPDFArrayRef pageAnnotations = NULL;
-    
     CGPDFDictionaryRef pageDictionary = CGPDFPageGetDictionary(pageRef);
-    
-    if (CGPDFDictionaryGetArray(pageDictionary, "Annots", &pageAnnotations) == true)
-        
-    {
-        
+    if (CGPDFDictionaryGetArray(pageDictionary, "Annots", &pageAnnotations) == true) {
         NSInteger count = CGPDFArrayGetCount(pageAnnotations); // Number of annotations
-        
         for (NSInteger index = 0; index < count; index++) // Iterate through all annotations
-            
         {
-            
             CGPDFDictionaryRef annotationDictionary = NULL; // PDF annotation dictionary
-            
             if (CGPDFArrayGetDictionary(pageAnnotations, index, &annotationDictionary) == true)
-                
             {
-                
                 const char *annotationSubtype = NULL; // PDF annotation subtype string
-                
                 CGPDFDictionaryGetName(annotationDictionary, "Subtype", &annotationSubtype);
                 
-//                NSString *subtype = [[NSString alloc] initWithCString:(const char*)annotationSubtype encoding:NSASCIIStringEncoding];
-//                NSLog(@"Diccionario de tipo: %@", subtype);
-                
                 if (CGPDFDictionaryGetName(annotationDictionary, "Subtype", &annotationSubtype) == true)
-                    
                 {
-                    
+                    //NSLog(@"Diccionario de tipo: %@", subtype);
                     if (strcmp(annotationSubtype, "Stamp") == 0) // Found annotation subtype of 'Stamp'
-                        
                     {
-                        
-                        //NSLog(@"Diccionario de tipo: %@", subtype);
-                        
                         CGPDFArrayRef annotationRectArray = NULL; // Annotation co-ordinates array
-                        
                         if (CGPDFDictionaryGetArray(annotationDictionary, "Rect", &annotationRectArray))
-                            
                         {
-                            
                             CGPDFReal ll_x = 0.0f; CGPDFReal ll_y = 0.0f; // PDFRect lower-left X and Y
-                            
                             CGPDFReal ur_x = 0.0f; CGPDFReal ur_y = 0.0f; // PDFRect upper-right X and Y
-                            
                             CGPDFArrayGetNumber(annotationRectArray, 0, &ll_x); // Lower-left X co-ordinate
-                            
                             CGPDFArrayGetNumber(annotationRectArray, 1, &ll_y); // Lower-left Y co-ordinate
-                            
                             CGPDFArrayGetNumber(annotationRectArray, 2, &ur_x); // Upper-right X co-ordinate
-                            
                             CGPDFArrayGetNumber(annotationRectArray, 3, &ur_y); // Upper-right Y co-ordinate
-                            
                             if (ll_x > ur_x) { CGPDFReal t = ll_x; ll_x = ur_x; ur_x = t; } // Normalize Xs
-                            
                             if (ll_y > ur_y) { CGPDFReal t = ll_y; ll_y = ur_y; ur_y = t; } // Normalize Ys
-                            
                             NSInteger _pageAngle = 0;
-                            
                             CGFloat _pageWidth = 0.0;
-                            
                             CGFloat _pageHeight = 0.0;
-                            
                             CGFloat _pageOffsetX = 0.0;
-                            
                             CGFloat _pageOffsetY = 0.0;
                             
                             ll_x -= _pageOffsetX; ll_y -= _pageOffsetY; // Offset lower-left co-ordinate
-                            
                             ur_x -= _pageOffsetX; ur_y -= _pageOffsetY; // Offset upper-right co-ordinate
                             
                             switch (_pageAngle) // Page rotation angle (in degrees)
-                            
                             {
-                                    
                                 case 90: // 90 degree page rotation
-                                    
                                 {
-                                    
                                     CGPDFReal swap;
-                                    
                                     swap = ll_y; ll_y = ll_x; ll_x = swap;
-                                    
                                     swap = ur_y; ur_y = ur_x; ur_x = swap;
-                                    
                                     break;
-                                    
                                 }
-                                    
                                 case 270: // 270 degree page rotation
-                                    
                                 {
-                                    
                                     CGPDFReal swap;
-                                    
                                     swap = ll_y; ll_y = ll_x; ll_x = swap;
-                                    
                                     swap = ur_y; ur_y = ur_x; ur_x = swap;
-                                    
                                     ll_x = ((0.0f - ll_x) + _pageWidth);
-                                    
                                     ur_x = ((0.0f - ur_x) + _pageWidth);
-                                    
                                     break;
-                                    
                                 }
                                     
                                 case 0: // 0 degree page rotation
-                                    
                                 {
-                                    
                                     ll_y = ((0.0f - ll_y) + _pageHeight);
-                                    
                                     ur_y = ((0.0f - ur_y) + _pageHeight);
-                                    
                                     break;
-                                    
                                 }
-                                    
                             }
-                            
-                            //CGRectMake(120, 841-735-15, 100, 37);
                             NSInteger vr_x = ll_x; NSInteger vr_w = (ur_x - ll_x); // Integer X and width
                             NSInteger vr_y = -1*ll_y; NSInteger vr_h = -1*(ur_y - ll_y); // Integer Y and height
                             CGRect viewRect = CGRectMake(vr_x, vr_y, vr_w, vr_h);
-                            //CGRect viewRect = CGRectMake(120, 841-735-15, 100, 37); // View CGRect from PDFRect
-                            //NSValue *viewRectValue = [annotationsPos objectAtIndex:index];
-                            //CGRect viewRect = [viewRectValue CGRectValue];
-                            
-//                            char *name; // Annotation co-ordinates array
-//                            if (CGPDFDictionaryGetName(annotationDictionary, "Name", &name)){
-//                                
-//                                //NSString *textName = [[NSString alloc] initWithCString:name encoding:NSASCIIStringEncoding];
-//                                
-//                                //NSLog(@"Nombre de la imagen: %@", textName);
-//                                
-//                            }
-                            
-                            
-                            
                             
                             CGPDFDictionaryRef ap;
-                            
                             if( !CGPDFDictionaryGetDictionary( annotationDictionary, "AP", &ap ) )
-                                
                             {
-                                
                                 continue;
-                                
                             }
                             
                             CGPDFStreamRef strm;
-                            
                             if( !CGPDFDictionaryGetStream( ap, "N", &strm ) )
-                                
                             {
-                                
                                 continue;
-                                
                             }
                             
                             CGPDFDictionaryRef strmdict = CGPDFStreamGetDictionary( strm );
-                            
                             CGPDFDictionaryRef res;
-                            
                             if( !CGPDFDictionaryGetDictionary( strmdict, "Resources", &res ) )
-                                
                             {
-                                
                                 continue;
-                                
                             }
                             
-//                            CGPDFInteger parent = 0;
-//                            if (CGPDFDictionaryGetInteger(ap, "StructParent", &parent) == true)
-//                                
-//                            {
-//                                NSLog(@"OK");
-//                            }
-//                            
                             CGPDFDictionaryRef xobject;
-                            
                             if( !CGPDFDictionaryGetDictionary( res, "XObject", &xobject ) )
-                                
                             {
-                                
                                 continue;
-                                
                             }
-                            
                             
                             char imagestr[16];
-                            
                             sprintf( imagestr, "img0");
-                            
                             CGPDFStreamRef strm2;
                             
                             if( !CGPDFDictionaryGetStream( xobject, imagestr, &strm2 ) )
-                                
                             {
-                                
-                                continue;;
-                                
+                                continue;
                             }
                             
 							UIImage *image = getImageRef(strm2);
-							//[imageSign234 imageByRemovingColorCGColorRef:[UIColor whiteColor].CGColor];
-							
 							CGSize imageSize = image.size;
 							float hfactor = imageSize.width / viewRect.size.width;
 							float vfactor = imageSize.height / viewRect.size.height;
-							
 							float factor = fmax(hfactor, vfactor);
 							
 							// Divide the size by the greater of the vertical or horizontal shrinkage factor
@@ -249,9 +140,150 @@
 							[image drawInRect:newRect];
 							
 							CGContextDrawImage(context, newRect, image.CGImage);
-							
                         }
 						
+                    }else if(strcmp(annotationSubtype, "Widget") == 0){
+                        // Found annotation subtype of 'Stamp'
+                        CGPDFArrayRef annotationRectArray = NULL; // Annotation co-ordinates array
+                        if (CGPDFDictionaryGetArray(annotationDictionary, "Rect", &annotationRectArray))
+                        {
+                            CGPDFReal ll_x = 0.0f; CGPDFReal ll_y = 0.0f; // PDFRect lower-left X and Y
+                            CGPDFReal ur_x = 0.0f; CGPDFReal ur_y = 0.0f; // PDFRect upper-right X and Y
+                            CGPDFArrayGetNumber(annotationRectArray, 0, &ll_x); // Lower-left X co-ordinate
+                            CGPDFArrayGetNumber(annotationRectArray, 1, &ll_y); // Lower-left Y co-ordinate
+                            CGPDFArrayGetNumber(annotationRectArray, 2, &ur_x); // Upper-right X co-ordinate
+                            CGPDFArrayGetNumber(annotationRectArray, 3, &ur_y); // Upper-right Y co-ordinate
+                            if (ll_x > ur_x) { CGPDFReal t = ll_x; ll_x = ur_x; ur_x = t; } // Normalize Xs
+                            if (ll_y > ur_y) { CGPDFReal t = ll_y; ll_y = ur_y; ur_y = t; } // Normalize Ys
+                            NSInteger _pageAngle = 0;
+                            CGFloat _pageWidth = 0.0;
+                            CGFloat _pageHeight = 0.0;
+                            CGFloat _pageOffsetX = 0.0;
+                            CGFloat _pageOffsetY = 0.0;
+                            
+                            ll_x -= _pageOffsetX; ll_y -= _pageOffsetY; // Offset lower-left co-ordinate
+                            ur_x -= _pageOffsetX; ur_y -= _pageOffsetY; // Offset upper-right co-ordinate
+                            
+                            switch (_pageAngle) // Page rotation angle (in degrees)
+                            {
+                                case 90: // 90 degree page rotation
+                                {
+                                    CGPDFReal swap;
+                                    swap = ll_y; ll_y = ll_x; ll_x = swap;
+                                    swap = ur_y; ur_y = ur_x; ur_x = swap;
+                                    break;
+                                }
+                                case 270: // 270 degree page rotation
+                                {
+                                    CGPDFReal swap;
+                                    swap = ll_y; ll_y = ll_x; ll_x = swap;
+                                    swap = ur_y; ur_y = ur_x; ur_x = swap;
+                                    ll_x = ((0.0f - ll_x) + _pageWidth);
+                                    ur_x = ((0.0f - ur_x) + _pageWidth);
+                                    break;
+                                }
+                                    
+                                case 0: // 0 degree page rotation
+                                {
+                                    ll_y = ((0.0f - ll_y) + _pageHeight);
+                                    ur_y = ((0.0f - ur_y) + _pageHeight);
+                                    break;
+                                }
+                            }
+                            NSInteger vr_x = ll_x; NSInteger vr_w = (ur_x - ll_x); // Integer X and width
+                            NSInteger vr_y = -1*ll_y; NSInteger vr_h = -1*(ur_y - ll_y); // Integer Y and height
+                            CGRect viewRect = CGRectMake(vr_x, vr_y, vr_w, vr_h);
+                            
+                            CGPDFDictionaryRef ap;
+                            if( !CGPDFDictionaryGetDictionary( annotationDictionary, "AP", &ap ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFStreamRef strm;
+                            if( !CGPDFDictionaryGetStream( ap, "N", &strm ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFDictionaryRef strmdict = CGPDFStreamGetDictionary( strm );
+                            CGPDFDictionaryRef res;
+                            if( !CGPDFDictionaryGetDictionary( strmdict, "Resources", &res ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFDictionaryRef xobject;
+                            if( !CGPDFDictionaryGetDictionary( res, "XObject", &xobject ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFStreamRef frm1Stream;
+                            if( !CGPDFDictionaryGetStream( xobject, "FRM1", &frm1Stream ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFDictionaryRef frm1 = CGPDFStreamGetDictionary(frm1Stream);
+                            CGPDFDictionaryRef frm1resources;
+                            if( !CGPDFDictionaryGetDictionary( frm1, "Resources", &frm1resources ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFDictionaryRef frm1xobject;
+                            if( !CGPDFDictionaryGetDictionary( frm1resources, "XObject", &frm1xobject ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFStreamRef frm1n1Stream;
+                            if( !CGPDFDictionaryGetStream( frm1xobject, "n1", &frm1n1Stream ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFDictionaryRef frm1n1 = CGPDFStreamGetDictionary(frm1n1Stream);
+                            CGPDFDictionaryRef frm1n1resources;
+                            if( !CGPDFDictionaryGetDictionary( frm1n1, "Resources", &frm1n1resources ) )
+                            {
+                                continue;
+                            }
+                            
+                            CGPDFDictionaryRef frm1n1xobject;
+                            if( !CGPDFDictionaryGetDictionary( frm1n1resources, "XObject", &frm1n1xobject ) )
+                            {
+                                continue;
+                            }
+                            
+                            char imagestr[16];
+                            sprintf( imagestr, "img1");
+                            CGPDFStreamRef strm2;
+                            
+                            if( !CGPDFDictionaryGetStream( frm1n1xobject, imagestr, &strm2 ) )
+                            {
+                                continue;
+                            }
+                            
+                            //CGPDFDictionaryApplyFunction(frm1xobject, printPDFKeys, NULL);
+                            
+                            UIImage *image = getImageRef(strm2);
+                            CGSize imageSize = image.size;
+                            float hfactor = imageSize.width / viewRect.size.width;
+                            float vfactor = imageSize.height / viewRect.size.height;
+                            float factor = fmax(hfactor, vfactor);
+                            
+                            // Divide the size by the greater of the vertical or horizontal shrinkage factor
+                            float newWidth = imageSize.width / factor;
+                            float newHeight = imageSize.height / factor;
+                            
+                            CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
+                            UIGraphicsBeginImageContextWithOptions(newRect.size, NO, 0.0);
+                            [image drawInRect:newRect];
+                            
+                            CGContextDrawImage(context, newRect, image.CGImage);
+                        }
                     }
                     
                 }
@@ -263,6 +295,41 @@
     }
     
 }
+
+// temporary C function to print out keys
+void printPDFKeys(const char *key, CGPDFObjectRef ob, void *info) {
+    NSString *typeValue = @"Unknow";
+    CGPDFObjectType type = CGPDFObjectGetType(ob);
+    switch (type) {
+        case kCGPDFObjectTypeBoolean:
+            typeValue = @"kCGPDFObjectTypeBoolean";
+            break;
+        case kCGPDFObjectTypeInteger:
+            typeValue = @"kCGPDFObjectTypeInteger";
+            break;
+        case kCGPDFObjectTypeReal:
+            typeValue = @"kCGPDFObjectTypeReal";
+            break;
+        case kCGPDFObjectTypeName:
+            typeValue = @"kCGPDFObjectTypeName";
+            break;
+        case kCGPDFObjectTypeString:
+            typeValue = @"kCGPDFObjectTypeString";
+            break;
+        case kCGPDFObjectTypeArray:
+            typeValue = @"kCGPDFObjectTypeArray";
+            break;
+        case kCGPDFObjectTypeDictionary:
+            typeValue = @"kCGPDFObjectTypeDictionary";
+            break;
+        case kCGPDFObjectTypeStream:
+            typeValue = @"kCGPDFObjectTypeStream";
+            break;
+    }
+    
+    NSLog(@"key = %s (%@)", key, typeValue);
+}
+
 
 CGFloat *decodeValuesFromImageDictionary(CGPDFDictionaryRef dict, CGColorSpaceRef cgColorSpace, NSInteger bitsPerComponent) {
     
