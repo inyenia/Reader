@@ -233,6 +233,10 @@
 		[mainToolbar setBookmarkState:[document.bookmarks containsIndex:page]];
 
 		[mainPagebar updatePagebar]; // Update page bar
+
+		if (delegate) {
+			[self.delegate didPageChanged:document.pageNumber];
+		}
 	}
 }
 
@@ -262,6 +266,9 @@
 
 		[mainPagebar updatePagebar]; // Update page bar
 		
+		if (delegate) {
+			[self.delegate didPageChanged:document.pageNumber];
+		}
 	}
 }
 

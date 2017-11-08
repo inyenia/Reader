@@ -35,6 +35,7 @@
 @optional // Delegate protocols
 
 - (void)dismissReaderViewController:(ReaderViewController *)viewController;
+- (void)didPageChanged:(NSNumber*)currentPage;
 
 @end
 
