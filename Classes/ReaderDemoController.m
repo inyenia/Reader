@@ -218,4 +218,8 @@
 #endif // DEMO_VIEW_CONTROLLER_PUSH
 }
 
+- (void) didPageChanged:(NSNumber *)currentPage {
+	
+}
+
 @end
