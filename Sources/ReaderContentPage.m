@@ -531,25 +531,27 @@
 
 - (void)drawLayer:(CATiledLayer *)layer inContext:(CGContextRef)context
 {
-	ReaderContentPage *readerContentPage = self; // Retain self
+	@synchronized(self) {
+		ReaderContentPage *readerContentPage = self; // Retain self
 
-	CGContextSetRGBFillColor(context, 1.0f, 1.0f, 1.0f, 1.0f); // White
+		CGContextSetRGBFillColor(context, 1.0f, 1.0f, 1.0f, 1.0f); // White
 
-	CGContextFillRect(context, CGContextGetClipBoundingBox(context)); // Fill
+		CGContextFillRect(context, CGContextGetClipBoundingBox(context)); // Fill
 
-	//NSLog(@"%s %@", __FUNCTION__, NSStringFromCGRect(CGContextGetClipBoundingBox(context)));
+		//NSLog(@"%s %@", __FUNCTION__, NSStringFromCGRect(CGContextGetClipBoundingBox(context)));
 
-	CGContextTranslateCTM(context, 0.0f, self.bounds.size.height); CGContextScaleCTM(context, 1.0f, -1.0f);
+		CGContextTranslateCTM(context, 0.0f, self.bounds.size.height); CGContextScaleCTM(context, 1.0f, -1.0f);
 
-	CGContextConcatCTM(context, CGPDFPageGetDrawingTransform(_PDFPageRef, kCGPDFCropBox, self.bounds, 0, true));
+		CGContextConcatCTM(context, CGPDFPageGetDrawingTransform(_PDFPageRef, kCGPDFCropBox, self.bounds, 0, true));
 
-	//CGContextSetRenderingIntent(context, kCGRenderingIntentDefault); CGContextSetInterpolationQuality(context, kCGInterpolationDefault);
+		//CGContextSetRenderingIntent(context, kCGRenderingIntentDefault); CGContextSetInterpolationQuality(context, kCGInterpolationDefault);
 
-	CGContextDrawPDFPage(context, _PDFPageRef); // Render the PDF page into the context
-	
-	[ReaderAnnotations showAnotationImage:_PDFPageRef inContext:context]; //Show annotations in this page
-	
-	if (readerContentPage != nil) readerContentPage = nil; // Release self
+		CGContextDrawPDFPage(context, _PDFPageRef); // Render the PDF page into the context
+		
+		[ReaderAnnotations showAnotationImage:_PDFPageRef inContext:context]; //Show annotations in this page
+		
+		if (readerContentPage != nil) readerContentPage = nil; // Release self
+	}
 }
 
 @end
