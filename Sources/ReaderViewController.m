@@ -59,6 +59,8 @@
 	CGFloat scrollViewOutset;
 
 	CGSize lastAppearSize;
+	
+	UIInterfaceOrientation lastDeviceOrientation;
 
 	NSDate *lastHideTime;
 
@@ -432,9 +434,10 @@
 
 	if (CGSizeEqualToSize(lastAppearSize, CGSizeZero) == false)
 	{
-		if (CGSizeEqualToSize(lastAppearSize, self.view.bounds.size) == false)
+		if ((lastDeviceOrientation != self.interfaceOrientation) ||
+			(CGSizeEqualToSize(lastAppearSize, self.view.bounds.size) == false))
 		{
-			[self updateContentViews:theScrollView]; // Update content views
+			[self performSelector:@selector(updateContentViews) withObject:nil afterDelay:0.0];
 		}
 
 		lastAppearSize = CGSizeZero; // Reset view size tracking
@@ -444,6 +447,10 @@
 	{
 		[self performSelector:@selector(showDocument) withObject:nil afterDelay:0.0];
 	}
+}
+
+- (void) updateContentViews {
+	[self updateContentViews:theScrollView]; // Update content views
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -462,6 +469,7 @@
 	[super viewWillDisappear:animated];
 
 	lastAppearSize = self.view.bounds.size; // Track view size
+	lastDeviceOrientation = self.interfaceOrientation;
 
 #if (READER_DISABLE_IDLE == TRUE) // Option
 
@@ -512,6 +520,7 @@
 	if (userInterfaceIdiom == UIUserInterfaceIdiomPad) if (printInteraction != nil) [printInteraction dismissAnimated:NO];
 
 	ignoreDidScroll = YES;
+	lastDeviceOrientation = toInterfaceOrientation;
 }
 
 - (void)willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation duration:(NSTimeInterval)duration
