@@ -334,6 +334,11 @@
 	return self;
 }
 
+- (void)updateDocument:(ReaderDocument*)doc {
+	document = doc;
+	[self updateDocument];
+}
+
 - (void)updateDocument
 {
 	currentPage = 0;

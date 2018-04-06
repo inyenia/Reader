@@ -47,6 +47,7 @@
 
 - (instancetype)initWithReaderDocument:(ReaderDocument *)object;
 - (void)updateDocument;
+- (void)updateDocument:(ReaderDocument*)doc;
 - (void)handleDoubleTap:(UITapGestureRecognizer *)recognizer;
 - (void)showAnnotation:(Annotation *)annotation;
 - (void)removeAnnotation:(Annotation *)annotation;
