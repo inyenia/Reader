@@ -27,6 +27,8 @@
 
 @interface ReaderContentPage : UIView
 
+@property (nonatomic, assign, readonly) CGPDFPageRef PDFPageRef;
+
 - (instancetype)initWithURL:(NSURL *)fileURL page:(NSInteger)page password:(NSString *)phrase;
 
 - (id)processSingleTap:(UITapGestureRecognizer *)recognizer;

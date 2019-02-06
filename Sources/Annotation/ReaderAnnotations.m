@@ -6,6 +6,7 @@
 
 
 #import "ReaderAnnotations.h"
+#import "Annotation.h"
 
 
 @implementation ReaderAnnotations
@@ -13,17 +14,15 @@
 
 }
 
-+(void)showAnotationImage:(CGPDFPageRef)pageRef inContext:(CGContextRef)context
++(NSArray*)getAnnotationsImage:(CGPDFPageRef)pageRef {
+    return [ReaderAnnotations getAnnotationsImage:pageRef scaleImages:YES];
+}
+
+// From a PDF Page, it retrieves an array of objects of type Annotation with the position and image read in the pdf annotations.
+// The scaleImages parameter should be YES for the images to be on high size, so it can be zoomed, or NO for the images to be lower quality.
++(NSArray*)getAnnotationsImage:(CGPDFPageRef)pageRef scaleImages:(BOOL)scaleImages
 {
-    
-    // INITIALIZATION POSITIONS
-    CGRect annotation1 = CGRectMake(120, 841-735-15, 100, 37);
-    CGRect annotation2 = CGRectMake(350, 841-735-15, 100, 37);
-    NSMutableArray *annotationsPos = [[NSMutableArray alloc] init];
-    [annotationsPos addObject:[NSValue valueWithCGRect:annotation1]];
-    [annotationsPos addObject:[NSValue valueWithCGRect:annotation2]];
-    
-    
+    NSMutableArray *result = [NSMutableArray array];
     CGPDFArrayRef pageAnnotations = NULL;
     CGPDFDictionaryRef pageDictionary = CGPDFPageGetDictionary(pageRef);
     if (CGPDFDictionaryGetArray(pageDictionary, "Annots", &pageAnnotations) == true) {
@@ -125,23 +124,28 @@
                                 continue;
                             }
                             
-							UIImage *image = getImageRef(strm2);
-							CGSize imageSize = image.size;
-							float hfactor = imageSize.width / viewRect.size.width;
-							float vfactor = imageSize.height / viewRect.size.height;
-							float factor = fmax(hfactor, vfactor);
-							
-							// Divide the size by the greater of the vertical or horizontal shrinkage factor
-							float newWidth = imageSize.width / factor;
-							float newHeight = imageSize.height / factor;
-							
-							CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
-							UIGraphicsBeginImageContextWithOptions(newRect.size, NO, 0.0);
-							[image drawInRect:newRect];
-							
-							CGContextDrawImage(context, newRect, image.CGImage);
+                            UIImage *image = getImageRef(strm2);
+                            CGSize imageSize = image.size;
+                            float hfactor = imageSize.width / viewRect.size.width;
+                            float vfactor = imageSize.height / viewRect.size.height;
+                            float factor = fmax(hfactor, vfactor);
+                            
+                            // Divide the size by the greater of the vertical or horizontal shrinkage factor
+                            float newWidth = imageSize.width / factor;
+                            float newHeight = imageSize.height / factor;
+                            
+                            CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
+                            
+                            if (!scaleImages) {
+                                image = [self imageWithImage:image scaledToSize:newRect.size];
+                            }
+                            
+                            Annotation* annotation = [[Annotation alloc] init];
+                            annotation.image = image;
+                            annotation.frame = newRect;
+                            
+                            [result addObject:annotation];
                         }
-						
                     }else if(strcmp(annotationSubtype, "Widget") == 0){
                         // Found annotation subtype of 'Stamp'
                         CGPDFArrayRef annotationRectArray = NULL; // Annotation co-ordinates array
@@ -279,10 +283,16 @@
                             float newHeight = imageSize.height / factor;
                             
                             CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
-                            UIGraphicsBeginImageContextWithOptions(newRect.size, NO, 0.0);
-                            [image drawInRect:newRect];
                             
-                            CGContextDrawImage(context, newRect, image.CGImage);
+                            if (!scaleImages) {
+                                image = [self imageWithImage:image scaledToSize:newRect.size];
+                            }
+                            
+                            Annotation* annotation = [[Annotation alloc] init];
+                            annotation.image = image;
+                            annotation.frame = newRect;
+                            
+                            [result addObject:annotation];
                         }
                     }
                     
@@ -292,6 +302,35 @@
             
         }
         
+    }
+    return result;
+    
+}
+
++ (UIImage*)imageWithImage:(UIImage*)image
+              scaledToSize:(CGSize)newSize;
+{
+    UIGraphicsBeginImageContext( newSize );
+    [image drawInRect:CGRectMake(0,0,newSize.width,newSize.height)];
+    UIImage* newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return newImage;
+}
+
+// Retrieves the annotations contained in the pdf and draws them in the given page with the given context.
++(void)showAnotationImage:(CGPDFPageRef)pageRef inContext:(CGContextRef)context
+{
+    NSArray *annots = [self getAnnotationsImage:pageRef];
+    
+    for (Annotation* annotation in annots) {
+        
+        UIGraphicsBeginImageContextWithOptions(annotation.frame.size, NO, 0.0);
+        [annotation.image drawInRect:annotation.frame];
+        
+        CGContextDrawImage(context, annotation.frame, annotation.image.CGImage);
+        
+        UIGraphicsEndImageContext();
     }
     
 }
@@ -712,7 +751,7 @@ UIImage *getImageRef(CGPDFStreamRef myStream) {
     
     image=[UIImage imageWithCGImage:cgImage];
     
-    
+    CGImageRelease(cgImage);
     
     // prueba cambiar colores imagen
     

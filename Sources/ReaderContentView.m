@@ -27,6 +27,8 @@
 #import "ReaderContentView.h"
 #import "ReaderContentPage.h"
 #import "ReaderThumbCache.h"
+#import "ReaderAnnotations.h"
+#import "Annotation.h"
 
 #import <QuartzCore/QuartzCore.h>
 
@@ -171,6 +173,18 @@ static inline CGFloat zoomScaleThatFits(CGSize target, CGSize source)
 
 #endif // end of READER_ENABLE_PREVIEW Option
 
+			// This loop is meant to retrieve the images for the annotations in the pdf, and draw them in low quality, before the render of the multiple layers of the page.
+			NSArray *annotationsThisPage = [ReaderAnnotations getAnnotationsImage:theContentPage.PDFPageRef scaleImages:NO];
+			for (Annotation *annotation in annotationsThisPage) {
+				UIView *content = theContainerView;
+				CGRect annotationRect = annotation.frame;
+				CGFloat yPos = self.pageSize.height - annotationRect.origin.y - annotationRect.size.height;
+				CGRect imageRect = CGRectMake(annotationRect.origin.x, yPos, annotationRect.size.width, annotationRect.size.height);
+				UIImageView *anotImage = [[UIImageView alloc] initWithImage:annotation.image];
+				anotImage.frame = imageRect;
+				[theContainerView addSubview:anotImage];
+			}
+			
 			[theContainerView addSubview:theContentPage]; // Add the content page to the container view
 
 			[self addSubview:theContainerView]; // Add the container view to the scroll view

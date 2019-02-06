@@ -39,5 +39,7 @@
 @property (strong, setter=setAnnotations:, nonatomic) NSMutableDictionary *annotations;
 
 +(void)showAnotationImage:(CGPDFPageRef) pageRef inContext:(CGContextRef)context;
++(NSArray*)getAnnotationsImage:(CGPDFPageRef)pageRef;
++(NSArray*)getAnnotationsImage:(CGPDFPageRef)pageRef scaleImages:(BOOL)scaleImages;
 
 @end

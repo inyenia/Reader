@@ -35,8 +35,6 @@
 
 	CGPDFDocumentRef _PDFDocRef;
 
-	CGPDFPageRef _PDFPageRef;
-
 	NSInteger _pageAngle;
 
 	CGFloat _pageWidth;
@@ -498,7 +496,7 @@
 	ReaderContentPage *view = [self initWithFrame:viewRect];
 
 	if (view != nil) [self buildAnnotationLinksList];
-
+	
 	return view;
 }
 
