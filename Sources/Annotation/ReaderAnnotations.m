@@ -223,13 +223,18 @@
                                 continue;
                             }
                             
+                            CGPDFStreamRef frmStream;
                             CGPDFStreamRef frm1Stream;
-                            if( !CGPDFDictionaryGetStream( xobject, "FRM1", &frm1Stream ) )
-                            {
+                            CGPDFStreamRef frmXStream;
+                            if(CGPDFDictionaryGetStream( xobject, "FRM", &frmStream ) ) {
+                                frmXStream = frmStream;
+                            } else if (CGPDFDictionaryGetStream( xobject, "FRM1", &frm1Stream ) ) {
+                                frmXStream = frm1Stream;
+                            } else {
                                 continue;
                             }
                             
-                            CGPDFDictionaryRef frm1 = CGPDFStreamGetDictionary(frm1Stream);
+                            CGPDFDictionaryRef frm1 = CGPDFStreamGetDictionary(frmXStream);
                             CGPDFDictionaryRef frm1resources;
                             if( !CGPDFDictionaryGetDictionary( frm1, "Resources", &frm1resources ) )
                             {
@@ -242,57 +247,58 @@
                                 continue;
                             }
                             
-                            CGPDFStreamRef frm1n1Stream;
-                            if( !CGPDFDictionaryGetStream( frm1xobject, "n1", &frm1n1Stream ) )
-                            {
-                                continue;
+                            NSArray* n = @[@"n0", @"n1", @"n2"];
+                            for (NSString *nx in n) {
+                                CGPDFStreamRef frmXnXStream;
+                                if(!CGPDFDictionaryGetStream( frm1xobject, [nx UTF8String], &frmXnXStream ) ) {
+                                    continue;
+                                }
+                                
+                                CGPDFDictionaryRef frm1n1 = CGPDFStreamGetDictionary(frmXnXStream);
+                                CGPDFDictionaryRef frm1n1resources;
+                                if( !CGPDFDictionaryGetDictionary( frm1n1, "Resources", &frm1n1resources ) )
+                                {
+                                    continue;
+                                }
+                                
+                                CGPDFDictionaryRef frm1n1xobject;
+                                if( !CGPDFDictionaryGetDictionary( frm1n1resources, "XObject", &frm1n1xobject ) )
+                                {
+                                    continue;
+                                }
+                                
+                                char imagestr[16];
+                                sprintf( imagestr, "img1");
+                                CGPDFStreamRef strm2;
+                                
+                                if( !CGPDFDictionaryGetStream( frm1n1xobject, imagestr, &strm2 ) )
+                                {
+                                    continue;
+                                }
+                                
+                                UIImage *image = getImageRef(strm2);
+                                CGSize imageSize = image.size;
+                                float hfactor = imageSize.width / viewRect.size.width;
+                                float vfactor = imageSize.height / viewRect.size.height;
+                                float factor = fmax(hfactor, vfactor);
+                                
+                                // Divide the size by the greater of the vertical or horizontal shrinkage factor
+                                float newWidth = imageSize.width / factor;
+                                float newHeight = imageSize.height / factor;
+                                
+                                CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
+                                
+                                if (!scaleImages) {
+                                    image = [self imageWithImage:image scaledToSize:newRect.size];
+                                }
+                                
+                                Annotation* annotation = [[Annotation alloc] init];
+                                annotation.image = image;
+                                annotation.frame = newRect;
+                                
+                                [result addObject:annotation];
                             }
                             
-                            CGPDFDictionaryRef frm1n1 = CGPDFStreamGetDictionary(frm1n1Stream);
-                            CGPDFDictionaryRef frm1n1resources;
-                            if( !CGPDFDictionaryGetDictionary( frm1n1, "Resources", &frm1n1resources ) )
-                            {
-                                continue;
-                            }
-                            
-                            CGPDFDictionaryRef frm1n1xobject;
-                            if( !CGPDFDictionaryGetDictionary( frm1n1resources, "XObject", &frm1n1xobject ) )
-                            {
-                                continue;
-                            }
-                            
-                            char imagestr[16];
-                            sprintf( imagestr, "img1");
-                            CGPDFStreamRef strm2;
-                            
-                            if( !CGPDFDictionaryGetStream( frm1n1xobject, imagestr, &strm2 ) )
-                            {
-                                continue;
-                            }
-                            
-                            //CGPDFDictionaryApplyFunction(frm1xobject, printPDFKeys, NULL);
-                            
-                            UIImage *image = getImageRef(strm2);
-                            CGSize imageSize = image.size;
-                            float hfactor = imageSize.width / viewRect.size.width;
-                            float vfactor = imageSize.height / viewRect.size.height;
-                            float factor = fmax(hfactor, vfactor);
-                            
-                            // Divide the size by the greater of the vertical or horizontal shrinkage factor
-                            float newWidth = imageSize.width / factor;
-                            float newHeight = imageSize.height / factor;
-                            
-                            CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
-                            
-                            if (!scaleImages) {
-                                image = [self imageWithImage:image scaledToSize:newRect.size];
-                            }
-                            
-                            Annotation* annotation = [[Annotation alloc] init];
-                            annotation.image = image;
-                            annotation.frame = newRect;
-                            
-                            [result addObject:annotation];
                         }
                     }
                     
