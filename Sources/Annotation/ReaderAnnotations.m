@@ -115,17 +115,36 @@
                                 continue;
                             }
                             
-                            char imagestr[16];
-                            sprintf( imagestr, "img0");
-                            CGPDFStreamRef strm2;
-                            
-                            if( !CGPDFDictionaryGetStream( xobject, imagestr, &strm2 ) )
+                            UIImage *imageFull = nil;
+                            char imagestr1[16];
+                            sprintf( imagestr1, "img1");
+                            CGPDFStreamRef strm1;
+                            if(CGPDFDictionaryGetStream( xobject, imagestr1, &strm1 ) )
                             {
+                                imageFull = getImageRef(strm1);
+                            }
+                            
+                            UIImage *imageMask = nil;
+                            char imagestr0[16];
+                            sprintf( imagestr0, "img0");
+                            CGPDFStreamRef strm0;
+                            if (CGPDFDictionaryGetStream( xobject, imagestr0, &strm0 )) {
+                                imageMask = getImageRef(strm0);
+                            }
+                            
+                            UIImage* imageResult = nil;
+                            if (imageMask && imageFull) {
+                                // Apply mask in the image
+                                imageResult = [self maskImage:imageFull withMask:imageMask];
+                            } else if (imageFull) {
+                                imageResult = imageFull;
+                            } else if (imageMask) {
+                                imageResult = imageMask;
+                            } else {
                                 continue;
                             }
                             
-                            UIImage *image = getImageRef(strm2);
-                            CGSize imageSize = image.size;
+                            CGSize imageSize = imageResult.size;
                             float hfactor = imageSize.width / viewRect.size.width;
                             float vfactor = imageSize.height / viewRect.size.height;
                             float factor = fmax(hfactor, vfactor);
@@ -137,11 +156,11 @@
                             CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
                             
                             if (!scaleImages) {
-                                image = [self imageWithImage:image scaledToSize:newRect.size];
+                                imageResult = [self imageWithImage:imageResult scaledToSize:newRect.size];
                             }
                             
                             Annotation* annotation = [[Annotation alloc] init];
-                            annotation.image = image;
+                            annotation.image = imageResult;
                             annotation.frame = newRect;
                             
                             [result addObject:annotation];
@@ -267,17 +286,36 @@
                                     continue;
                                 }
                                 
-                                char imagestr[16];
-                                sprintf( imagestr, "img1");
-                                CGPDFStreamRef strm2;
+								UIImage *imageMask = nil;
+								char imagestr0[16];
+								sprintf( imagestr0, "img0");
+								CGPDFStreamRef strm0;
+								if (CGPDFDictionaryGetStream( frm1n1xobject, imagestr0, &strm0 )) {
+									imageMask = getImageRef(strm0);
+								}
+								
+								UIImage *imageFull = nil;
+								char imagestr1[16];
+								sprintf( imagestr1, "img1");
+								CGPDFStreamRef strm1;
+								if(CGPDFDictionaryGetStream( frm1n1xobject, imagestr1, &strm1 ) )
+								{
+									imageFull = getImageRef(strm1);
+								}
+								
+								UIImage* imageResult = nil;
+								if (imageMask && imageFull) {
+									// Apply mask in the image
+									imageResult = [self maskImage:imageFull withMask:imageMask];
+								} else if (imageFull) {
+									imageResult = imageFull;
+								} else if (imageMask) {
+									imageResult = imageMask;
+								} else {
+									continue;
+								}
                                 
-                                if( !CGPDFDictionaryGetStream( frm1n1xobject, imagestr, &strm2 ) )
-                                {
-                                    continue;
-                                }
-                                
-                                UIImage *image = getImageRef(strm2);
-                                CGSize imageSize = image.size;
+                                CGSize imageSize = imageResult.size;
                                 float hfactor = imageSize.width / viewRect.size.width;
                                 float vfactor = imageSize.height / viewRect.size.height;
                                 float factor = fmax(hfactor, vfactor);
@@ -289,11 +327,11 @@
                                 CGRect newRect = CGRectMake(viewRect.origin.x, viewRect.origin.y, newWidth, newHeight);
                                 
                                 if (!scaleImages) {
-                                    image = [self imageWithImage:image scaledToSize:newRect.size];
+                                    imageResult = [self imageWithImage:imageResult scaledToSize:newRect.size];
                                 }
                                 
                                 Annotation* annotation = [[Annotation alloc] init];
-                                annotation.image = image;
+                                annotation.image = imageResult;
                                 annotation.frame = newRect;
                                 
                                 [result addObject:annotation];
@@ -759,31 +797,6 @@ UIImage *getImageRef(CGPDFStreamRef myStream) {
     
     CGImageRelease(cgImage);
     
-    // prueba cambiar colores imagen
-    
-    if (strcmp(colorSpaceName, "DeviceGray") == 0){
-        
-        UIGraphicsBeginImageContext(image.size);
-        
-        CGContextSetBlendMode(UIGraphicsGetCurrentContext(), kCGBlendModeCopy);
-        
-        [image drawInRect:CGRectMake(0, 0, image.size.width, image.size.height)];
-        
-        CGContextSetBlendMode(UIGraphicsGetCurrentContext(), kCGBlendModeDifference);
-        
-        CGContextSetFillColorWithColor(UIGraphicsGetCurrentContext(),[UIColor whiteColor].CGColor);
-        
-        CGContextFillRect(UIGraphicsGetCurrentContext(), CGRectMake(0, 0, image.size.width, image.size.height));
-        
-        image= UIGraphicsGetImageFromCurrentImageContext();
-        
-        UIGraphicsEndImageContext();
-        
-        // Change White to Transparent for signature background.
-        UIImage* newImg = [ReaderAnnotations replaceColor:[UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1.0] inImage:image withTolerance:255.0];
-        image = newImg;
-    }
-    
     return image;
 }
 
@@ -863,6 +876,47 @@ UIImage *getImageRef(CGPDFStreamRef myStream) {
     free(rawData);
     
     return result;
+}
+
++ (UIImage*) maskImage:(UIImage *)image withMask:(UIImage *)maskImage {
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+
+        CGImageRef maskImageRef = [maskImage CGImage];
+
+        // create a bitmap graphics context the size of the image
+        CGContextRef mainViewContentContext = CGBitmapContextCreate (NULL, maskImage.size.width, maskImage.size.height, 8, 0, colorSpace, kCGImageAlphaPremultipliedLast);
+        CGColorSpaceRelease(colorSpace);
+
+        if (mainViewContentContext==NULL)
+            return NULL;
+
+        CGFloat ratio = 0;
+
+        ratio = maskImage.size.width/ image.size.width;
+
+        if(ratio * image.size.height < maskImage.size.height) {
+            ratio = maskImage.size.height/ image.size.height;
+        }
+
+        CGRect rect1  = {{0, 0}, {maskImage.size.width, maskImage.size.height}};
+        CGRect rect2  = {{-((image.size.width*ratio)-maskImage.size.width)/2 , -((image.size.height*ratio)-maskImage.size.height)/2}, {image.size.width*ratio, image.size.height*ratio}};
+
+
+        CGContextClipToMask(mainViewContentContext, rect1, maskImageRef);
+        CGContextDrawImage(mainViewContentContext, rect2, image.CGImage);
+
+
+        // Create CGImageRef of the main view bitmap content, and then
+        // release that bitmap context
+        CGImageRef newImage = CGBitmapContextCreateImage(mainViewContentContext);
+        CGContextRelease(mainViewContentContext);
+
+        UIImage *theImage = [UIImage imageWithCGImage:newImage];
+
+        CGImageRelease(newImage);
+
+        // return the image
+        return theImage;
 }
 
 @end
