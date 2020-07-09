@@ -18,6 +18,34 @@
     return [ReaderAnnotations getAnnotationsImage:pageRef scaleImages:YES];
 }
 
+void ListDictionaryObjects (const char *key, CGPDFObjectRef object, void *info) {
+    NSString* tab = @"";
+    int rec = ((__bridge NSNumber*)info).intValue;
+    for (int i = 0; i < rec; i++) {
+        tab = [tab stringByAppendingString:@"-"];
+    }
+    
+    NSLog(@"%@key: %s", tab, key);
+    CGPDFObjectType type = CGPDFObjectGetType(object);
+    switch (type) {
+        case kCGPDFObjectTypeDictionary: {
+            CGPDFDictionaryRef objectDictionary;
+            if (CGPDFObjectGetValue(object, kCGPDFObjectTypeDictionary, &objectDictionary)) {
+                NSNumber* recursive= [NSNumber numberWithInt: + 1];
+                CGPDFDictionaryApplyFunction(objectDictionary, ListDictionaryObjects, (__bridge void * _Nullable)(recursive));
+            }
+        }
+        case kCGPDFObjectTypeInteger: {
+            CGPDFInteger objectInteger;
+            if (CGPDFObjectGetValue(object, kCGPDFObjectTypeInteger, &objectInteger)) {
+                NSLog(@"%@value: %ld", tab, (long int)objectInteger);
+            }
+        }
+        // test other object type cases here
+        // cf. http://developer.apple.com/mac/library/documentation/GraphicsImaging/Reference/CGPDFObject/Reference/reference.html#//apple_ref/doc/uid/TP30001117-CH3g-SW1
+    }
+}
+
 // From a PDF Page, it retrieves an array of objects of type Annotation with the position and image read in the pdf annotations.
 // The scaleImages parameter should be YES for the images to be on high size, so it can be zoomed, or NO for the images to be lower quality.
 +(NSArray*)getAnnotationsImage:(CGPDFPageRef)pageRef scaleImages:(BOOL)scaleImages
@@ -25,6 +53,11 @@
     NSMutableArray *result = [NSMutableArray array];
     CGPDFArrayRef pageAnnotations = NULL;
     CGPDFDictionaryRef pageDictionary = CGPDFPageGetDictionary(pageRef);
+    
+    // Debug dictionary elements.
+//  NSNumber* recursive= @0;
+//  CGPDFDictionaryApplyFunction(pageDictionary, ListDictionaryObjects, (__bridge void * _Nullable)(recursive));
+    
     if (CGPDFDictionaryGetArray(pageDictionary, "Annots", &pageAnnotations) == true) {
         NSInteger count = CGPDFArrayGetCount(pageAnnotations); // Number of annotations
         for (NSInteger index = 0; index < count; index++) // Iterate through all annotations
@@ -141,7 +174,19 @@
                             } else if (imageMask) {
                                 imageResult = imageMask;
                             } else {
-                                continue;
+                                // Search for the Stamp image in other possible locations
+                                NSArray* values = @[@"Im0", @"Im1", @"Im2"];
+                                int index = 0;
+                                while (!imageResult && index < values.count) {
+                                    char* val = [[values objectAtIndex:index] UTF8String];
+                                    if (CGPDFDictionaryGetStream( xobject, val, &strm0 )) {
+                                        imageResult = getImageRef(strm0);
+                                    }
+                                    index++;
+                                }
+                                if (!imageResult) {
+                                    continue;
+                                }
                             }
                             
                             CGSize imageSize = imageResult.size;
